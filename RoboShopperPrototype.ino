@@ -1,5 +1,11 @@
 #include <AFMotor.h>                              //Library to Control L293D Motor Drive Shield
-#include <Servo.h>                                //Library to control Ultrasonic Sensor's Servo Motor
+#include <Servo.h>                                //Library to Control Ultrasonic Sensor's Servo Motor
+#include <IRremote.h>                             //Library to Decode Infrared Remote Contol Signals
+
+//IR Remote Control
+byte receiver = A0;                               //Set IR Receiver Pin = A0
+IRrecv irrecv(receiver);                          //Create an object to control the IR Sensor
+decode_results code;                              //Create a object to store the IR Sensor's results
 
 //DC Motors - Wheels
 AF_DCMotor rightBack(1);                          //Create an object to control each motor
@@ -23,6 +29,14 @@ float timeOut = 2*(maxDist+10)/100/340*1000000;   //Maximum time to wait for a r
 
 void setup()
 {
+  //Arduino Setup
+  Serial.begin(9600);                             //Set Baud rateto 9600
+
+  //IR Remote Setup
+  irrecv.enableIRIn();                            //Enable the IR Receiver
+  irrecv.blink13(true);                           //Enable the IR Receiver's LED
+
+  //Motors Setup
   rightBack.setSpeed(motorSpeed);                 //Set the motors to the motor speed
   rightFront.setSpeed(motorSpeed);
   leftFront.setSpeed(motorSpeed+motorOffset);
@@ -33,6 +47,7 @@ void setup()
   leftFront.run(RELEASE);
   leftBack.run(RELEASE);
 
+  //UltraSonic Sensor Setup
   servoUltraSonic.attach(10);                   //Assign the Servo Motor to Pin 10
   pinMode(trig,OUTPUT);                         //Assign the Ultrasonic Sensor Pins
   pinMode(echo,INPUT);
@@ -42,6 +57,11 @@ void loop()
 {
   servoUltraSonic.write(90);                  //Set the Servo to Look Straight Ahead (90deg)
   delay(750);                                 //Wait for 750ms for Servo to move
+
+  // if (irrecv.decode(&results)) {
+  //   Serial.println(results.value, HEX);
+  //   irrecv.resume();
+  // }
 
   int distance = getDistance();               //Check if their are objects infront of the cart
   if (distance >= stopDist) {

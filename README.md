@@ -1,2 +1,21 @@
 # RoboShopperPrototype
 41X Project
+
+IR Remote Control Hexadecimal
+1 -> FFA25D
+2 -> FF629D
+3 -> FFE21D
+4 -> FF22DD
+5 -> FF02FD
+6 -> FFC23D
+7 -> FFE01F
+8 -> FFA857
+9 -> FF906F
+0 -> FF9867
+* -> FF6897
+# -> FFB04F
+OK -> FF38C7
+UP_ARROW -> FF18E7
+LEFT_ARROW -> FF10EF
+RIGHT_ARROW -> FF5AA5
+DOWN_ARROW -> FF4AB5
