@@ -52,27 +52,11 @@ void loop()
     delay(250);
   }
   stopMove();
+  delay(5000);
+  turnLeft(550);
   Serial.print("Distance: ");
   Serial.print(distance);
   Serial.print(" cm");
-
-  // moveForward();                              //Move Forward
-  // delay(5000);                                //For 5 seconds
-
-  // stopMove();                                 //Stop
-  // delay(5000);                                //For 5 seconds
-
-  // turnLeft (750);                             //Turn Left
-  // delay(5000);                                //For 5 seconds
-
-  // turnLeft (700);                             //Turn Left 180deg
-  // delay(5000);                                //For 5 seconds
-
-  // turnLeft (2600);                             //Turn Left 360deg
-  // delay(5000);                                //For 5 seconds
-
-  // turnRight (400);                            //Turn Right
-  // delay(5000);                                //For 5 seconds
 }
 
 void accelerate()                                 //Function to accelerate the motors from 0 to full speed
