@@ -3,9 +3,9 @@
 #include <IRremote.h>                             //Library to Decode Infrared Remote Contol Signals
 
 //IR Remote Control
-byte receiver = A0;                               //Set IR Receiver Pin = A0
+byte receiver = A5;                               //Set IR Receiver Pin = A0
 IRrecv irrecv(receiver);                          //Create an object to control the IR Sensor
-decode_results code;                              //Create a object to store the IR Sensor's results
+decode_results results;                              //Create a object to store the IR Sensor's results
 
 //DC Motors - Wheels
 AF_DCMotor rightBack(1);                          //Create an object to control each motor
@@ -58,25 +58,21 @@ void loop()
   servoUltraSonic.write(90);                  //Set the Servo to Look Straight Ahead (90deg)
   delay(750);                                 //Wait for 750ms for Servo to move
 
-  // if (irrecv.decode(&results)) {
-  //   Serial.println(results.value, HEX);
-  //   irrecv.resume();
+  moveForward();
+  // int distance = getDistance();               //Check if their are objects infront of the cart
+  // if (distance >= stopDist) {
+  //   moveForward();
   // }
+  // while (distance >= stopDist) {              //Continue checking the object distance until within minimum stopping distance
+  //   distance = getDistance();
+  //   delay(250);
+  // }
+  // stopMove();
+  // delay(5000);
+  // turnLeft(550);
 
-  int distance = getDistance();               //Check if their are objects infront of the cart
-  if (distance >= stopDist) {
-    moveForward();
-  }
-  while (distance >= stopDist) {              //Continue checking the object distance until within minimum stopping distance
-    distance = getDistance();
-    delay(250);
-  }
-  stopMove();
-  delay(5000);
-  turnLeft(550);
-  Serial.print("Distance: ");
-  Serial.print(distance);
-  Serial.print(" cm");
+  
+
 }
 
 void accelerate()                                 //Function to accelerate the motors from 0 to full speed
