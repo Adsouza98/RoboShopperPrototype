@@ -13,7 +13,8 @@ unsigned long CurrentTime = 0;
 unsigned long PausedTime = 0;
 long ElaspedTime = 0;
 
-long coTobakery_Time= 3200;              //Checkout -> Bakery
+long coToBakery_Time = 3200;              //Checkout -> Bakery Time
+long coToProduce_Time = 4500;             //Checkout -> Produce Time
 
 bool destination = false;
 
@@ -68,14 +69,15 @@ void loop()
   servoUltraSonic.write(90);                  //Set the Servo to Look Straight Ahead (90deg)
   delay(750);                                 //Wait for 750ms for Servo to move
   
-  checkoutToBakery();
+  //checkoutToBakery();
+  //turnLeft(600);
 
-  delay(500);
-  turnLeft(600);
+  //Checkout -> Produce
+  checkoutToProduce();
   
   while(true){}
 
-  
+
 }
 
 void accelerate()                                 //Function to accelerate the motors from 0 to full speed
@@ -190,21 +192,59 @@ void checkoutToBakery()                           //Checkout -> Bakery
       ElaspedTime = CurrentTime - PausedTime - StartTime;
     }
 
-    while ( (distance >= stopDist) && (ElaspedTime < coTobakery_Time)) {              //Continue checking the object distance until within minimum stopping distance
+    while ( (distance >= stopDist) && (ElaspedTime < coToBakery_Time)) {              //Continue checking the object distance until within minimum stopping distance
       distance = getDistance();
       delay(250);
       CurrentTime = millis();
       ElaspedTime = CurrentTime - PausedTime - StartTime;
     }
 
-    while ( (distance <= stopDist) && (ElaspedTime < coTobakery_Time) ) {
+    while ( (distance <= stopDist) && (ElaspedTime < coToBakery_Time) ) {
       stopMove();
       distance = getDistance();
       delay(250);
       PausedTime = millis() - CurrentTime + 250;
     }
 
-    if (ElaspedTime >= coTobakery_Time) {
+    if (ElaspedTime >= coToBakery_Time) {
+      destination = true;
+    }
+
+  }
+  stopMove();
+}
+
+void checkoutToProduce()
+{
+  //TODO: Check sensor to the left
+  turnLeft(600);
+  int distance = getDistance();
+  StartTime = millis();
+  while (destination != true) {
+    distance = getDistance();               //Check if their are objects infront of the cart
+    delay(250);
+
+    if (distance >= stopDist) {
+      moveForward();
+      CurrentTime = millis();
+      ElaspedTime = CurrentTime - PausedTime - StartTime;
+    }
+
+    while ( (distance >= stopDist) && (ElaspedTime < coToProduce_Time)) {              //Continue checking the object distance until within minimum stopping distance
+      distance = getDistance();
+      delay(250);
+      CurrentTime = millis();
+      ElaspedTime = CurrentTime - PausedTime - StartTime;
+    }
+
+    while ( (distance <= stopDist) && (ElaspedTime < coToProduce_Time) ) {
+      stopMove();
+      distance = getDistance();
+      delay(250);
+      PausedTime = millis() - CurrentTime + 250;
+    }
+
+    if (ElaspedTime >= coToProduce_Time) {
       destination = true;
     }
 
