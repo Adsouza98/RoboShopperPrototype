@@ -3,9 +3,19 @@
 #include <IRremote.h>                             //Library to Decode Infrared Remote Contol Signals
 
 //IR Remote Control
-byte receiver = A5;                               //Set IR Receiver Pin = A0
-IRrecv irrecv(receiver);                          //Create an object to control the IR Sensor
-decode_results results;                              //Create a object to store the IR Sensor's results
+// byte receiver = A5;                               //Set IR Receiver Pin = A0
+// IRrecv irrecv(receiver);                          //Create an object to control the IR Sensor
+// decode_results results;                           //Create a object to store the IR Sensor's results
+
+//Timings
+unsigned long StartTime = 0;
+unsigned long CurrentTime = 0;
+unsigned long PausedTime = 0;
+long ElaspedTime = 0;
+
+long coTobakery_Time= 3200;              //Checkout -> Bakery
+
+bool destination = false;
 
 //DC Motors - Wheels
 AF_DCMotor rightBack(1);                          //Create an object to control each motor
@@ -19,8 +29,8 @@ int turnSpeed = 50;                               //Amount to add to motor speed
 
 //Ultra Sonic Sensor
 Servo servoUltraSonic;                            //Create an object to control the Ultrasonic Sensor's Servo Motor
-byte trig = 2;
-byte echo = 13;
+byte trig = A4;
+byte echo = A5;
 
 byte maxDist = 75;                                
 byte stopDist = 25;
@@ -32,9 +42,9 @@ void setup()
   //Arduino Setup
   Serial.begin(9600);                             //Set Baud rateto 9600
 
-  //IR Remote Setup
-  irrecv.enableIRIn();                            //Enable the IR Receiver
-  irrecv.blink13(true);                           //Enable the IR Receiver's LED
+  // //IR Remote Setup
+  // irrecv.enableIRIn();                            //Enable the IR Receiver
+  // irrecv.blink13(true);                           //Enable the IR Receiver's LED
 
   //Motors Setup
   rightBack.setSpeed(motorSpeed);                 //Set the motors to the motor speed
@@ -57,22 +67,15 @@ void loop()
 {
   servoUltraSonic.write(90);                  //Set the Servo to Look Straight Ahead (90deg)
   delay(750);                                 //Wait for 750ms for Servo to move
+  
+  checkoutToBakery();
 
-  moveForward();
-  // int distance = getDistance();               //Check if their are objects infront of the cart
-  // if (distance >= stopDist) {
-  //   moveForward();
-  // }
-  // while (distance >= stopDist) {              //Continue checking the object distance until within minimum stopping distance
-  //   distance = getDistance();
-  //   delay(250);
-  // }
-  // stopMove();
-  // delay(5000);
-  // turnLeft(550);
+  delay(500);
+  turnLeft(600);
+  
+  while(true){}
 
   
-
 }
 
 void accelerate()                                 //Function to accelerate the motors from 0 to full speed
@@ -171,4 +174,40 @@ int getDistance()                                 //Measure the distance to an o
   distance = (float)pulse * 340/2/10000;          //Calculate the object distance based on the pulse
 
   return distance;
+}
+
+void checkoutToBakery()                           //Checkout -> Bakery
+{
+  int distance = getDistance();               //Check if their are objects infront of the cart
+  StartTime = millis();
+  while (destination != true) {
+    distance = getDistance();               //Check if their are objects infront of the cart
+    delay(250);
+
+    if (distance >= stopDist) {
+      moveForward();
+      CurrentTime = millis();
+      ElaspedTime = CurrentTime - PausedTime - StartTime;
+    }
+
+    while ( (distance >= stopDist) && (ElaspedTime < coTobakery_Time)) {              //Continue checking the object distance until within minimum stopping distance
+      distance = getDistance();
+      delay(250);
+      CurrentTime = millis();
+      ElaspedTime = CurrentTime - PausedTime - StartTime;
+    }
+
+    while ( (distance <= stopDist) && (ElaspedTime < coTobakery_Time) ) {
+      stopMove();
+      distance = getDistance();
+      delay(250);
+      PausedTime = millis() - CurrentTime + 250;
+    }
+
+    if (ElaspedTime >= coTobakery_Time) {
+      destination = true;
+    }
+
+  }
+  stopMove();
 }
