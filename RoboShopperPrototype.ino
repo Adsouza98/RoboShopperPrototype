@@ -1,11 +1,5 @@
-#include <AFMotor.h>                              //Library to Control L293D Motor Drive Shield
-#include <Servo.h>                                //Library to Control Ultrasonic Sensor's Servo Motor
-#include <IRremote.h>                             //Library to Decode Infrared Remote Contol Signals
-
-//IR Remote Control
-// byte receiver = A5;                               //Set IR Receiver Pin = A0
-// IRrecv irrecv(receiver);                          //Create an object to control the IR Sensor
-// decode_results results;                           //Create a object to store the IR Sensor's results
+#include <AFMotor.h>                             //Library to Control L293D Motor Drive Shield
+#include <Servo.h>                               //Library to Control Ultrasonic Sensor's Servo Motor
 
 //Timings
 unsigned long StartTime = 0;
@@ -13,76 +7,83 @@ unsigned long CurrentTime = 0;
 unsigned long PausedTime = 0;
 long ElaspedTime = 0;
 
-long coToBakery_Time = 3200;              //Checkout -> Bakery Time
-long coToProduce_Time = 4500;             //Checkout -> Produce Time
-long bakeryToMeats_Time = 4500;           //Checkout -> Meats
+long coToBakery_Time = 3200;                     //Checkout -> Bakery Time
+long coToProduce_Time = 4500;                    //Checkout -> Produce Time
+long bakeryToMeats_Time = 4500;                  //Checkout -> Meats
 
 //DC Motors - Wheels
-AF_DCMotor rightBack(1);                          //Create an object to control each motor
+AF_DCMotor rightBack(1);                         //Create an object to control each motor
 AF_DCMotor rightFront(2);
 AF_DCMotor leftFront(3);
 AF_DCMotor leftBack(4);
 
-byte motorSpeed = 65;                             //The maximum motor speed
-int motorOffset = 35;                             //Factor to account for one side being more powerful
-int turnSpeed = 50;                               //Amount to add to motor speed when turning
+byte motorSpeed = 65;                            //The maximum motor speed
+int motorOffset = 35;                            //Factor to account for one side being more powerful
+int turnSpeed = 50;                              //Amount to add to motor speed when turning
 
 //Ultra Sonic Sensor
-Servo servoUltraSonic;                            //Create an object to control the Ultrasonic Sensor's Servo Motor
-byte trig = A4;
-byte echo = A5;
+Servo servoUltraSonic;                           //Create an object to control the Ultrasonic Sensor's Servo Motor
+byte trig = A5;
+byte echo = A4;
 
 byte maxDist = 75;                                
 byte stopDist = 25;
-float timeOut = 2*(maxDist+10)/100/340*1000000;   //Maximum time to wait for a return signal
+float timeOut = 2*(maxDist+10)/100/340*1000000;  //Maximum time to wait for a return signal
 
 
 void setup()
 {
   //Arduino Setup
-  Serial.begin(9600);                             //Set Baud rateto 9600
-
-  // //IR Remote Setup
-  // irrecv.enableIRIn();                            //Enable the IR Receiver
-  // irrecv.blink13(true);                           //Enable the IR Receiver's LED
+  Serial.begin(9600);                            //Set Baud rate to 9600
 
   //Motors Setup
-  rightBack.setSpeed(motorSpeed);                 //Set the motors to the motor speed
+  rightBack.setSpeed(motorSpeed);                //Set the motors to the motor speed
   rightFront.setSpeed(motorSpeed);
   leftFront.setSpeed(motorSpeed+motorOffset);
   leftBack.setSpeed(motorSpeed+motorOffset);
 
-  rightBack.run(RELEASE);                         //Ensure all motors are stopped
+  rightBack.run(RELEASE);                        //Ensure all motors are stopped
   rightFront.run(RELEASE);
   leftFront.run(RELEASE);
   leftBack.run(RELEASE);
 
   //UltraSonic Sensor Setup
-  servoUltraSonic.attach(10);                   //Assign the Servo Motor to Pin 10
-  pinMode(trig,OUTPUT);                         //Assign the Ultrasonic Sensor Pins
+  servoUltraSonic.attach(10);                    //Assign the Servo Motor to Pin 10
+  pinMode(trig,OUTPUT);                          //Assign the Ultrasonic Sensor Pins
   pinMode(echo,INPUT);
 }
 
 void loop()
 {
-  servoUltraSonic.write(90);                  //Set the Servo to Look Straight Ahead (90deg)
-  delay(750);                                 //Wait for 750ms for Servo to move
-  
-  //Checkout -> Bakery
-  //checkoutToBakery();
+  servoUltraSonic.write(90);                     //Set the Servo to Look Straight Ahead (90deg)
+  delay(750);                                    //Wait for 750ms for Servo to move
 
-  //Checkout -> Produce
-  //checkoutToProduce();
-
-  //Checkout -> Meats
-  checkoutToMeats();
+  // servoUltraSonic.write(90);                     //Set the Servo to Look Straight Ahead (90deg)
+  // delay(750);                                    //Wait for 750ms for Servo to move
   
+  // //Checkout -> Bakery
+  // Serial.println("Checkout->Bakery");
+  // checkoutToBakery();
+
+  // //Checkout -> Produce
+  // Serial.println("Checkout->Produce");
+  checkoutToProduce();
+
+  // //Checkout -> Meats
+  // Serial.println("Checkout->Meats");
+  //checkoutToMeats();
+
+  // //Checkout -> Dairy
+  // Serial.println("Checkout->Diary");
+  //checkoutToDairy();
+
+
   while(true){}
 
 
 }
 
-void accelerate()                                 //Function to accelerate the motors from 0 to full speed
+void accelerate()                                //Function to accelerate the motors from 0 to full speed
 {
   for (int i=0; i<motorSpeed; i++)                //Loop from 0 to full speed
   {
@@ -94,7 +95,7 @@ void accelerate()                                 //Function to accelerate the m
   }
 }
 
-void decelerate()                                 //Function to decelerate the motors from full speed to zero
+void decelerate()                                //Function to decelerate the motors from full speed to zero
 {
   for (int i=motorSpeed; i!=0; i--)               //Loop from full speed to 0
   {
@@ -106,7 +107,7 @@ void decelerate()                                 //Function to decelerate the m
   }
 }
 
-void moveForward()                                //Set all motors to run forward
+void moveForward()                               //Set all motors to run forward
 {
   rightBack.run(FORWARD);
   rightFront.run(FORWARD);
@@ -114,7 +115,7 @@ void moveForward()                                //Set all motors to run forwar
   leftBack.run(FORWARD);
 }
 
-void stopMove()                                   //Set all motors to stop
+void stopMove()                                  //Set all motors to stop
 {
   rightBack.run(RELEASE);
   rightFront.run(RELEASE);
@@ -122,7 +123,7 @@ void stopMove()                                   //Set all motors to stop
   leftBack.run(RELEASE);
 }
 
-void turnLeft(int duration)                                 //Set motors to turn left for the specified duration then stop
+void turnLeft(int duration)                      //Set motors to turn left for the specified duration then stop
 {
   rightBack.setSpeed(motorSpeed+turnSpeed);                 //Set the motors to the motor speed
   rightFront.setSpeed(motorSpeed+turnSpeed);
@@ -144,7 +145,7 @@ void turnLeft(int duration)                                 //Set motors to turn
 
 }
 
-void turnRight(int duration)                                //Set motors to turn right for the specified duration then stop
+void turnRight(int duration)                     //Set motors to turn right for the specified duration then stop
 {
   rightBack.setSpeed(motorSpeed+turnSpeed);                 //Set the motors to the motor speed
   rightFront.setSpeed(motorSpeed+turnSpeed);
@@ -165,7 +166,7 @@ void turnRight(int duration)                                //Set motors to turn
   leftBack.run(RELEASE);
 }
 
-int getDistance()                                 //Measure the distance to an object
+int getDistance()                                //Measure the distance to an object
 {
   unsigned long pulse;                            //Pulse Travel Time
   int distance;
@@ -183,10 +184,10 @@ int getDistance()                                 //Measure the distance to an o
 void traversal(long travelTime)
 {
   bool destination = false;
-  int distance = getDistance();               //Check if their are objects infront of the cart
+  int distance = getDistance();                  //Check if their are objects infront of the cart
   StartTime = millis();
   while (destination != true) {
-    distance = getDistance();               //Check if their are objects infront of the cart
+    distance = getDistance();                    //Check if their are objects infront of the cart
     delay(250);
 
     if (distance >= stopDist) {
@@ -216,26 +217,68 @@ void traversal(long travelTime)
   }
 }
 
-void checkoutToBakery()                           //Checkout -> Bakery
+void checkoutToBakery()                          //Checkout -> Bakery
 {
   traversal(coToBakery_Time);
   stopMove();
+
+  servoUltraSonic.write(180);                    //Set the Servo to Look Left (180deg = 190degs)
+  delay(750);
+  int distance = getDistance();
+  while (distance <= stopDist) {
+    distance = getDistance();
+    stopMove();
+  }
+  servoUltraSonic.write(90);
   turnLeft(600);
 }
 
-void checkoutToProduce()                          //Checkout -> Produce
+void checkoutToProduce()                         //Checkout -> Produce
 {
-  //TODO: Check sensor to the left
+  servoUltraSonic.write(180);                    //Set the Servo to Look Left (180deg = 190degs)
+  delay(750);
+  int distance = getDistance();
+  while (distance <= stopDist) {
+    distance = getDistance();
+    stopMove();
+  }
+  servoUltraSonic.write(90);
   turnLeft(600);
+
   traversal(coToProduce_Time);
+
   stopMove();
+  servoUltraSonic.write(11);                     //Set the Servo to Look Right (0deg = 11degs)
+  delay(750);
+  while (distance <= stopDist) {
+    stopMove();
+  }
+  servoUltraSonic.write(90);
   turnRight(600);
 }
 
-void checkoutToMeats()                            //Checkout -> Meats
+void checkoutToMeats()                           //Checkout -> Meats
 {
-  long adjustedTime = millis() + bakeryToMeats_Time;
   checkoutToBakery();
-  traversal(adjustedTime);
+  traversal(bakeryToMeats_Time);
+  turnLeft(600);
+}
+
+void checkoutToDairy()                           //Checkout -> Dairy
+{
+  turnLeft(600);
+  traversal(2300);
+  stopMove();
+  delay(3000);
+  turnRight(700);
+  stopMove();
+  delay(3000);
+  traversal(1600);
+  stopMove();
+}
+
+void bakeryToMeats()                             //Bakery -> Meats
+{
+  traversal(bakeryToMeats_Time);
   turnLeft(600);
 }
