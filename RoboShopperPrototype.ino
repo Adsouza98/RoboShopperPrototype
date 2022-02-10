@@ -1,5 +1,7 @@
 #include <AFMotor.h>                             //Library to Control L293D Motor Drive Shield
 #include <Servo.h>                               //Library to Control Ultrasonic Sensor's Servo Motor
+#include <MPU6050_tockn.h>                       //Library to Control MPU6050 Sensor
+#include <Wire.h>                                //Library to Control I2C connection required to use MPU6050 Sensor
 
 //Timings
 unsigned long StartTime = 0;
@@ -10,6 +12,9 @@ long ElaspedTime = 0;
 long coToBakery_Time = 3200;                     //Checkout -> Bakery Time
 long coToProduce_Time = 4500;                    //Checkout -> Produce Time
 long bakeryToMeats_Time = 4500;                  //Checkout -> Meats
+
+//MPU6050 Sensor
+MPU6050 mpu6050(Wire);                           //Create an object to track MPU6050 data
 
 //DC Motors - Wheels
 AF_DCMotor rightBack(1);                         //Create an object to control each motor
@@ -23,8 +28,8 @@ int turnSpeed = 50;                              //Amount to add to motor speed 
 
 //Ultra Sonic Sensor
 Servo servoUltraSonic;                           //Create an object to control the Ultrasonic Sensor's Servo Motor
-byte trig = A5;
-byte echo = A4;
+byte trig = 2;
+byte echo = 13;
 
 byte maxDist = 75;                                
 byte stopDist = 25;
@@ -35,6 +40,11 @@ void setup()
 {
   //Arduino Setup
   Serial.begin(9600);                            //Set Baud rate to 9600
+
+  //MPU6050 Setup
+  Wire.begin();
+  mpu6050.begin();
+  mpu6050.calcGyroOffsets(true);
 
   //Motors Setup
   rightBack.setSpeed(motorSpeed);                //Set the motors to the motor speed
@@ -57,17 +67,17 @@ void loop()
 {
   servoUltraSonic.write(90);                     //Set the Servo to Look Straight Ahead (90deg)
   delay(750);                                    //Wait for 750ms for Servo to move
-
+  
   // servoUltraSonic.write(90);                     //Set the Servo to Look Straight Ahead (90deg)
   // delay(750);                                    //Wait for 750ms for Servo to move
   
   // //Checkout -> Bakery
   // Serial.println("Checkout->Bakery");
-  // checkoutToBakery();
+  checkoutToBakery();
 
   // //Checkout -> Produce
   // Serial.println("Checkout->Produce");
-  checkoutToProduce();
+  //checkoutToProduce();
 
   // //Checkout -> Meats
   // Serial.println("Checkout->Meats");
@@ -123,47 +133,59 @@ void stopMove()                                  //Set all motors to stop
   leftBack.run(RELEASE);
 }
 
-void turnLeft(int duration)                      //Set motors to turn left for the specified duration then stop
+void turnLeft(float currentAngle)                      //Set motors to turn left for the specified duration then stop
 {
   rightBack.setSpeed(motorSpeed+turnSpeed);                 //Set the motors to the motor speed
   rightFront.setSpeed(motorSpeed+turnSpeed);
   leftFront.setSpeed(motorSpeed+motorOffset+turnSpeed);
   leftBack.setSpeed(motorSpeed+motorOffset+turnSpeed);
-  rightBack.run(FORWARD);
-  rightFront.run(FORWARD);
-  leftFront.run(BACKWARD);
-  leftBack.run(BACKWARD);
-  delay(duration);
+  
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  do {
+    rightBack.run(FORWARD);
+    rightFront.run(FORWARD);
+    leftFront.run(BACKWARD);
+    leftBack.run(BACKWARD);
+    mpu6050.update();
+    Serial.print("\tTurning\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+  } while (mpu6050.getAngleZ() < (currentAngle + 85));
+  stopMove();
+
   rightBack.setSpeed(motorSpeed);                           //Set the motors to the motor speed
   rightFront.setSpeed(motorSpeed);
   leftFront.setSpeed(motorSpeed+motorOffset);
   leftBack.setSpeed(motorSpeed+motorOffset);
-  rightBack.run(RELEASE);
-  rightFront.run(RELEASE);
-  leftFront.run(RELEASE);
-  leftBack.run(RELEASE);
-
 }
 
-void turnRight(int duration)                     //Set motors to turn right for the specified duration then stop
+void turnRight(long currentAngle)                     //Set motors to turn right for the specified duration then stop
 {
   rightBack.setSpeed(motorSpeed+turnSpeed);                 //Set the motors to the motor speed
   rightFront.setSpeed(motorSpeed+turnSpeed);
   leftFront.setSpeed(motorSpeed+motorOffset+turnSpeed);
   leftBack.setSpeed(motorSpeed+motorOffset+turnSpeed);
-  rightBack.run(BACKWARD);
-  rightFront.run(BACKWARD);
-  leftFront.run(FORWARD);
-  leftBack.run(FORWARD);
-  delay(duration);
+
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+
+  do {
+    rightBack.run(BACKWARD);
+    rightFront.run(BACKWARD);
+    leftFront.run(FORWARD);
+    leftBack.run(FORWARD);
+    mpu6050.update();
+    Serial.print("\tTurning\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+  } while(mpu6050.getAngleZ() > currentAngle - 85);
+  stopMove();
+
   rightBack.setSpeed(motorSpeed);                           //Set the motors to the motor speed
   rightFront.setSpeed(motorSpeed);
   leftFront.setSpeed(motorSpeed+motorOffset);
   leftBack.setSpeed(motorSpeed+motorOffset);
-  rightBack.run(RELEASE);
-  rightFront.run(RELEASE);
-  leftFront.run(RELEASE);
-  leftBack.run(RELEASE);
 }
 
 int getDistance()                                //Measure the distance to an object
@@ -230,7 +252,11 @@ void checkoutToBakery()                          //Checkout -> Bakery
     stopMove();
   }
   servoUltraSonic.write(90);
-  turnLeft(600);
+
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
 }
 
 void checkoutToProduce()                         //Checkout -> Produce
@@ -243,7 +269,11 @@ void checkoutToProduce()                         //Checkout -> Produce
     stopMove();
   }
   servoUltraSonic.write(90);
-  turnLeft(600);
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
 
   traversal(coToProduce_Time);
 
@@ -254,23 +284,36 @@ void checkoutToProduce()                         //Checkout -> Produce
     stopMove();
   }
   servoUltraSonic.write(90);
-  turnRight(600);
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnRight(mpu6050.getAngleZ());
 }
 
 void checkoutToMeats()                           //Checkout -> Meats
 {
   checkoutToBakery();
   traversal(bakeryToMeats_Time);
-  turnLeft(600);
+
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
 }
 
 void checkoutToDairy()                           //Checkout -> Dairy
 {
-  turnLeft(600);
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
   traversal(2300);
   stopMove();
   delay(3000);
-  turnRight(700);
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnRight(mpu6050.getAngleZ());
   stopMove();
   delay(3000);
   traversal(1600);
@@ -280,5 +323,8 @@ void checkoutToDairy()                           //Checkout -> Dairy
 void bakeryToMeats()                             //Bakery -> Meats
 {
   traversal(bakeryToMeats_Time);
-  turnLeft(600);
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
 }
