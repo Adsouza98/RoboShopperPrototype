@@ -4,14 +4,11 @@
 #include <Wire.h>                                //Library to Control I2C connection required to use MPU6050 Sensor
 
 //Timings
-unsigned long StartTime = 0;
-unsigned long CurrentTime = 0;
-unsigned long PausedTime = 0;
-long ElaspedTime = 0;
+long coToBakery_Time = 3400;                     //Checkout -> Bakery Time
+long coToProduce_Time = 4900;                    //Checkout -> Produce Time
+long bakeryToMeats_Time = 4800;                  //Checkout -> Meats
 
-long coToBakery_Time = 3200;                     //Checkout -> Bakery Time
-long coToProduce_Time = 4500;                    //Checkout -> Produce Time
-long bakeryToMeats_Time = 4500;                  //Checkout -> Meats
+long meatsToProduce_Time = 2000;                 //Meats -> Produce Time
 
 //MPU6050 Sensor
 MPU6050 mpu6050(Wire);                           //Create an object to track MPU6050 data
@@ -22,14 +19,17 @@ AF_DCMotor rightFront(2);
 AF_DCMotor leftFront(3);
 AF_DCMotor leftBack(4);
 
-byte motorSpeed = 65;                            //The maximum motor speed
-int motorOffset = 35;                            //Factor to account for one side being more powerful
+byte motorSpeed = 67;                            //The maximum motor speed
+int motorOffset = 33;                            //Factor to account for one side being more powerful
 int turnSpeed = 50;                              //Amount to add to motor speed when turning
 
 //Ultra Sonic Sensor
 Servo servoUltraSonic;                           //Create an object to control the Ultrasonic Sensor's Servo Motor
 byte trig = 2;
 byte echo = 13;
+int straight = 95;
+int left = 180;
+int right = 12;
 
 byte maxDist = 75;                                
 byte stopDist = 25;
@@ -65,27 +65,36 @@ void setup()
 
 void loop()
 {
-  servoUltraSonic.write(90);                     //Set the Servo to Look Straight Ahead (90deg)
-  delay(750);                                    //Wait for 750ms for Servo to move
-  
-  // servoUltraSonic.write(90);                     //Set the Servo to Look Straight Ahead (90deg)
-  // delay(750);                                    //Wait for 750ms for Servo to move
-  
-  // //Checkout -> Bakery
+  servoUltraSonic.write(straight);                     //Set the Servo to Look Straight Ahead (90deg)
+  delay(750);                                          //Wait for 750ms for Servo to move
+
+  // Checkout -> Bakery
   // Serial.println("Checkout->Bakery");
-  checkoutToBakery();
+  //checkoutToBakery();
 
-  // //Checkout -> Produce
+  // Bakery -> Dairy
+  // bakeryToDairy();
+
+  // Bakery -> Meats
+  // bakeryToMeats();
+
+  // Meats -> Produce (Needs to be verified)
+  // meatsToProduce();
+
+  // Checkout -> Produce
   // Serial.println("Checkout->Produce");
-  //checkoutToProduce();
+  // checkoutToProduce();
 
-  // //Checkout -> Meats
+  // Checkout -> Meats
   // Serial.println("Checkout->Meats");
-  //checkoutToMeats();
+  // checkoutToMeats();
 
-  // //Checkout -> Dairy
+  // Checkout -> Dairy
   // Serial.println("Checkout->Diary");
-  //checkoutToDairy();
+  checkoutToDairy();
+
+  // Dairy -> Bakery
+  dairyToBakery();
 
 
   while(true){}
@@ -151,7 +160,7 @@ void turnLeft(float currentAngle)                      //Set motors to turn left
     mpu6050.update();
     Serial.print("\tTurning\tangleZ : ");
     Serial.println(mpu6050.getAngleZ());
-  } while (mpu6050.getAngleZ() < (currentAngle + 85));
+  } while (mpu6050.getAngleZ() < (currentAngle + 155));
   stopMove();
 
   rightBack.setSpeed(motorSpeed);                           //Set the motors to the motor speed
@@ -179,7 +188,7 @@ void turnRight(long currentAngle)                     //Set motors to turn right
     mpu6050.update();
     Serial.print("\tTurning\tangleZ : ");
     Serial.println(mpu6050.getAngleZ());
-  } while(mpu6050.getAngleZ() > currentAngle - 85);
+  } while(mpu6050.getAngleZ() > currentAngle - 155);
   stopMove();
 
   rightBack.setSpeed(motorSpeed);                           //Set the motors to the motor speed
@@ -203,9 +212,37 @@ int getDistance()                                //Measure the distance to an ob
   return distance;
 }
 
+void lookLeft()
+{
+  servoUltraSonic.write(left);                    //Set the Servo to Look Left (180deg = 190degs)
+  delay(750);
+  int distance = getDistance();
+  while (distance <= stopDist) {
+    distance = getDistance();
+    stopMove();
+  }
+  servoUltraSonic.write(straight);
+}
+
+void lookRight()
+{
+  servoUltraSonic.write(right);                     //Set the Servo to Look Right (0deg)
+  delay(750);
+  int distance = getDistance();
+  while (distance <= stopDist) {
+    distance = getDistance();
+    stopMove();
+  }
+  servoUltraSonic.write(straight);
+}
+
 void traversal(long travelTime)
 {
   bool destination = false;
+  unsigned long StartTime = 0;
+  unsigned long CurrentTime = 0;
+  unsigned long PausedTime = 0;
+  long ElaspedTime = 0;
   int distance = getDistance();                  //Check if their are objects infront of the cart
   StartTime = millis();
   while (destination != true) {
@@ -232,6 +269,8 @@ void traversal(long travelTime)
       PausedTime = millis() - CurrentTime + 250;
     }
 
+    ElaspedTime = CurrentTime - PausedTime - StartTime;
+
     if (ElaspedTime >= travelTime) {
       destination = true;
     }
@@ -244,14 +283,7 @@ void checkoutToBakery()                          //Checkout -> Bakery
   traversal(coToBakery_Time);
   stopMove();
 
-  servoUltraSonic.write(180);                    //Set the Servo to Look Left (180deg = 190degs)
-  delay(750);
-  int distance = getDistance();
-  while (distance <= stopDist) {
-    distance = getDistance();
-    stopMove();
-  }
-  servoUltraSonic.write(90);
+  lookLeft();
 
   mpu6050.update();
   Serial.print("\tangleZ : ");
@@ -261,29 +293,16 @@ void checkoutToBakery()                          //Checkout -> Bakery
 
 void checkoutToProduce()                         //Checkout -> Produce
 {
-  servoUltraSonic.write(180);                    //Set the Servo to Look Left (180deg = 190degs)
-  delay(750);
-  int distance = getDistance();
-  while (distance <= stopDist) {
-    distance = getDistance();
-    stopMove();
-  }
-  servoUltraSonic.write(90);
+  lookLeft();
   mpu6050.update();
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
-  turnLeft(mpu6050.getAngleZ());
   turnLeft(mpu6050.getAngleZ());
 
   traversal(coToProduce_Time);
 
   stopMove();
-  servoUltraSonic.write(11);                     //Set the Servo to Look Right (0deg = 11degs)
-  delay(750);
-  while (distance <= stopDist) {
-    stopMove();
-  }
-  servoUltraSonic.write(90);
+  lookRight();
   mpu6050.update();
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
@@ -294,7 +313,11 @@ void checkoutToMeats()                           //Checkout -> Meats
 {
   checkoutToBakery();
   traversal(bakeryToMeats_Time);
-
+  stopMove();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  lookLeft();
   mpu6050.update();
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
@@ -303,19 +326,37 @@ void checkoutToMeats()                           //Checkout -> Meats
 
 void checkoutToDairy()                           //Checkout -> Dairy
 {
+  lookLeft();
   mpu6050.update();
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
   turnLeft(mpu6050.getAngleZ());
+
   traversal(2300);
   stopMove();
-  delay(3000);
+
+  lookRight();
+
   mpu6050.update();
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
   turnRight(mpu6050.getAngleZ());
+
+  traversal(1600);
   stopMove();
-  delay(3000);
+}
+
+void bakeryToDairy()                             //Bakery -> Dairy
+{
+  traversal(2300);
+  stopMove();
+
+  lookLeft();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
+
   traversal(1600);
   stopMove();
 }
@@ -323,8 +364,43 @@ void checkoutToDairy()                           //Checkout -> Dairy
 void bakeryToMeats()                             //Bakery -> Meats
 {
   traversal(bakeryToMeats_Time);
+  stopMove();
+
+  lookLeft();
   mpu6050.update();
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
   turnLeft(mpu6050.getAngleZ());
+}
+
+void meatsToProduce()                            //Meats -> Produce
+{
+  traversal(meatsToProduce_Time);
+  stopMove();
+
+  lookLeft();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
+
+}
+
+void dairyToBakery()                             //Dairy -> Bakery
+{
+  traversal(2000);
+  stopMove();
+  lookRight();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnRight(mpu6050.getAngleZ());
+
+  traversal(2200);
+  stopMove();
+  lookRight();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnRight(mpu6050.getAngleZ());
 }
