@@ -8,8 +8,6 @@ long coToBakery_Time = 3400;                     //Checkout -> Bakery Time
 long coToProduce_Time = 4900;                    //Checkout -> Produce Time
 long bakeryToMeats_Time = 4800;                  //Checkout -> Meats
 
-long meatsToProduce_Time = 2000;                 //Meats -> Produce Time
-
 //MPU6050 Sensor
 MPU6050 mpu6050(Wire);                           //Create an object to track MPU6050 data
 
@@ -69,8 +67,34 @@ void loop()
   delay(750);                                          //Wait for 750ms for Servo to move
 
   // Checkout -> Bakery
-  // Serial.println("Checkout->Bakery");
-  //checkoutToBakery();
+  // checkoutToBakery();
+
+  // Checkout -> Produce
+  checkoutToProduce();
+
+  // Checkout -> Meats
+  // checkoutToMeats();
+
+  // Checkout -> Dairy
+  // checkoutToDairy();
+
+  // Produce -> Meats (Southbound)
+  // produceToMeats('S');
+
+  // Produce -> Bakery (Southbound)
+  // produceToBakery('S');
+
+  // Produce -> Dairy (Westbound)
+  // produceToDairy('W');
+
+  // Produce -> Checkout (Westbound)
+  // produceToCheckout('W');
+
+  // Meats -> Bakery (Southbound)
+  // meatsToBakery('S');
+
+  // Meats -> Bakery (Eastbound)
+  // meatsToBakery('E');
 
   // Bakery -> Dairy
   // bakeryToDairy();
@@ -78,23 +102,30 @@ void loop()
   // Bakery -> Meats
   // bakeryToMeats();
 
+  // Bakery -> Checkout (Westbound)
+  // bakeryToCheckout('W');
+
   // Meats -> Produce (Needs to be verified)
   // meatsToProduce();
 
-  // Checkout -> Produce
-  // Serial.println("Checkout->Produce");
-  // checkoutToProduce();
-
-  // Checkout -> Meats
-  // Serial.println("Checkout->Meats");
-  // checkoutToMeats();
-
-  // Checkout -> Dairy
-  // Serial.println("Checkout->Diary");
-  checkoutToDairy();
-
   // Dairy -> Bakery
-  dairyToBakery();
+  // dairyToBakery();
+
+  // Dairy -> Meats
+  // dairyToMeats();
+
+  // Dairy -> Produce (Northbound)
+  // dairyToProduce('N');
+
+  // Dairy -> Produce (Southbound)
+  // dairyToProduce('S');
+
+  // Dairy -> Checkout (Northbound)
+  // dairyToCheckout('N');
+
+  // Dairy -> Checkout (Southbound)
+  //dairyToCheckout('S');
+
 
 
   while(true){}
@@ -142,7 +173,7 @@ void stopMove()                                  //Set all motors to stop
   leftBack.run(RELEASE);
 }
 
-void turnLeft(float currentAngle)                      //Set motors to turn left for the specified duration then stop
+void turnLeft(float currentAngle)                //Set motors to turn left for the specified duration then stop
 {
   rightBack.setSpeed(motorSpeed+turnSpeed);                 //Set the motors to the motor speed
   rightFront.setSpeed(motorSpeed+turnSpeed);
@@ -169,7 +200,7 @@ void turnLeft(float currentAngle)                      //Set motors to turn left
   leftBack.setSpeed(motorSpeed+motorOffset);
 }
 
-void turnRight(long currentAngle)                     //Set motors to turn right for the specified duration then stop
+void turnRight(long currentAngle)                //Set motors to turn right for the specified duration then stop
 {
   rightBack.setSpeed(motorSpeed+turnSpeed);                 //Set the motors to the motor speed
   rightFront.setSpeed(motorSpeed+turnSpeed);
@@ -188,7 +219,7 @@ void turnRight(long currentAngle)                     //Set motors to turn right
     mpu6050.update();
     Serial.print("\tTurning\tangleZ : ");
     Serial.println(mpu6050.getAngleZ());
-  } while(mpu6050.getAngleZ() > currentAngle - 155);
+  } while(mpu6050.getAngleZ() > currentAngle - 145);
   stopMove();
 
   rightBack.setSpeed(motorSpeed);                           //Set the motors to the motor speed
@@ -278,7 +309,7 @@ void traversal(long travelTime)
   }
 }
 
-void checkoutToBakery()                          //Checkout -> Bakery
+char checkoutToBakery()                          //Checkout -> Bakery
 {
   traversal(coToBakery_Time);
   stopMove();
@@ -289,9 +320,10 @@ void checkoutToBakery()                          //Checkout -> Bakery
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
   turnLeft(mpu6050.getAngleZ());
+  return 'E';
 }
 
-void checkoutToProduce()                         //Checkout -> Produce
+char checkoutToProduce()                         //Checkout -> Produce
 {
   lookLeft();
   mpu6050.update();
@@ -307,24 +339,17 @@ void checkoutToProduce()                         //Checkout -> Produce
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
   turnRight(mpu6050.getAngleZ());
+  return 'S';
 }
 
-void checkoutToMeats()                           //Checkout -> Meats
+char checkoutToMeats()                           //Checkout -> Meats
 {
   checkoutToBakery();
-  traversal(bakeryToMeats_Time);
-  stopMove();
-  mpu6050.update();
-  Serial.print("\tangleZ : ");
-  Serial.println(mpu6050.getAngleZ());
-  lookLeft();
-  mpu6050.update();
-  Serial.print("\tangleZ : ");
-  Serial.println(mpu6050.getAngleZ());
-  turnLeft(mpu6050.getAngleZ());
+  bakeryToMeats('E');
+  return 'N';
 }
 
-void checkoutToDairy()                           //Checkout -> Dairy
+char checkoutToDairy()                           //Checkout -> Dairy
 {
   lookLeft();
   mpu6050.update();
@@ -344,11 +369,19 @@ void checkoutToDairy()                           //Checkout -> Dairy
 
   traversal(1600);
   stopMove();
+  return 'S';
 }
 
-void bakeryToDairy()                             //Bakery -> Dairy
+char bakeryToDairy(char dir)                     //Bakery -> Dairy
 {
-  traversal(2300);
+  if (dir == 'N') {
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+  }
+  traversal(2250);
   stopMove();
 
   lookLeft();
@@ -357,12 +390,20 @@ void bakeryToDairy()                             //Bakery -> Dairy
   Serial.println(mpu6050.getAngleZ());
   turnLeft(mpu6050.getAngleZ());
 
-  traversal(1600);
+  traversal(1700);
   stopMove();
+  return 'N';
 }
 
-void bakeryToMeats()                             //Bakery -> Meats
+char bakeryToMeats(char dir)                     //Bakery -> Meats
 {
+  if (dir == 'N') {
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+  }
   traversal(bakeryToMeats_Time);
   stopMove();
 
@@ -371,36 +412,293 @@ void bakeryToMeats()                             //Bakery -> Meats
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
   turnLeft(mpu6050.getAngleZ());
+  return 'N';
 }
 
-void meatsToProduce()                            //Meats -> Produce
+char bakeryToProduce(char dir)                   //Bakery -> Produce (Not Stable because of meatsToProduce())
 {
-  traversal(meatsToProduce_Time);
+  if (dir == 'N') {
+    bakeryToMeats('N');
+  } else {
+    bakeryToMeats('E');
+  }
+  meatsToProduce('N');
+  return 'W';
+}
+
+void bakeryToCheckout(char dir)                  //Bakery -> Checkout
+{
+  if (dir == 'E') {
+    lookLeft();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnLeft(mpu6050.getAngleZ());
+  }
+  traversal(3000);
   stopMove();
-
-  lookLeft();
-  mpu6050.update();
-  Serial.print("\tangleZ : ");
-  Serial.println(mpu6050.getAngleZ());
-  turnLeft(mpu6050.getAngleZ());
-
 }
 
-void dairyToBakery()                             //Dairy -> Bakery
+char meatsToProduce(char dir)                    //Meats -> Produce (Not Stable)
 {
+  if (dir == 'W') {
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+  }
   traversal(2000);
   stopMove();
-  lookRight();
+  lookLeft();
   mpu6050.update();
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
-  turnRight(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
+  return 'W';
+}
 
-  traversal(2200);
+char meatsToBakery(char dir)                     //Meats -> Bakery
+{
+  if (dir == 'N') {
+    lookLeft();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnLeft(mpu6050.getAngleZ());
+  }
+  traversal(4800);
   stopMove();
   lookRight();
   mpu6050.update();
   Serial.print("\tangleZ : ");
   Serial.println(mpu6050.getAngleZ());
   turnRight(mpu6050.getAngleZ());
+  return 'N';
+}
+
+char meatsToDairy(char dir)                      //Meats -> Dairy (Need to Test)
+{
+  if (dir == 'N') {
+    lookLeft();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnLeft(mpu6050.getAngleZ());
+  }
+
+  traversal(2700);
+  stopMove();
+  lookRight();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnRight(mpu6050.getAngleZ());
+  traversal(1850);
+  stopMove();
+  return 'N';
+}
+
+void meatsToCheckout(char dir)                   //Meats -> Checkout (Need to Test)
+{
+  if (dir == 'N') {
+    meatsToProduce('N');
+    produceToCheckout('W');
+  } else {
+    meatsToBakery('W');
+    bakeryToCheckout('N');
+  }
+}
+
+char dairyToBakery(char dir)                     //Dairy -> Bakery
+{
+  if (dir == 'N') {
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+  }
+  traversal(1850);
+  stopMove();
+  lookRight();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnRight(mpu6050.getAngleZ());
+
+  traversal(2250);
+  stopMove();
+  lookRight();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnRight(mpu6050.getAngleZ());
+  return 'N';
+}
+
+char dairyToMeats(char dir)                      //Dairy -> Meats
+{
+  if (dir == 'N') {
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+  }
+  traversal(1850);
+  stopMove();
+  lookLeft();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
+
+  traversal(2700);
+  stopMove();
+  lookLeft();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
+  return 'N';
+}
+
+char dairyToProduce(char dir)                    //Dairy -> Produce
+{
+  if (dir == 'S') {
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+  }
+  traversal(1500);
+  stopMove();
+  lookRight();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnRight(mpu6050.getAngleZ());
+
+  traversal(2300);
+  stopMove();
+  lookRight();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnRight(mpu6050.getAngleZ());
+  return 'S';
+}
+
+void dairyToCheckout(char dir)                   //Dairy -> Checkout
+{
+  if (dir == 'S') {
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+  }
+  traversal(1500);
+  stopMove();
+  lookLeft();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
+
+  traversal(2300);
+  stopMove();
+  lookLeft();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
+
+}
+
+char produceToMeats(char dir)                    //Produce -> Meats
+{
+  if (dir == 'W') {
+    lookLeft();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnLeft(mpu6050.getAngleZ());
+  }
+
+  traversal(3200);
+  stopMove();
+  lookRight();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnRight(mpu6050.getAngleZ());
+  return 'W';
+}
+
+char produceToBakery(char dir)                   //Produce -> Bakery
+{
+  if (dir == 'W') {
+    produceToMeats('W');
+  } else {
+    produceToMeats('S');
+  }
+  meatsToBakery('W');
+  return 'N';
+}
+
+char produceToDairy(char dir)                    //Produce -> Dairy
+{
+  if (dir == 'S') {
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+  }
+  traversal(3000);
+  stopMove();
+  lookLeft();
+  mpu6050.update();
+  Serial.print("\tangleZ : ");
+  Serial.println(mpu6050.getAngleZ());
+  turnLeft(mpu6050.getAngleZ());
+  traversal(1600);
+  stopMove();
+  return 'S';
+}
+
+void produceToCheckout(char dir)                 //Produce -> Checkout
+{
+  if (dir == 'S') {
+    lookRight();
+    mpu6050.update();
+    Serial.print("\tangleZ : ");
+    Serial.println(mpu6050.getAngleZ());
+    turnRight(mpu6050.getAngleZ());
+  }
+  traversal(4900);
+  stopMove();
 }
