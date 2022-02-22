@@ -1,21 +1,7 @@
 # RoboShopperPrototype
 41X Project
 
-IR Remote Control Hexadecimal
-1 -> FFA25D -> 16753245 -> 2883
-2 -> FF629D -> 16736925 -> 739
-3 -> FFE21D -> 16769565 -> 21159
-4 -> FF22DD -> 16720605 -> -18105
-5 -> FF02FD -> 16712445 -> 12355
-6 -> FFC23D -> 16761405 -> 13027
-7 -> FFE01F -> 16769055 -> -22941
-8 -> FFA857 -> 16754775 -> -11517
-9 -> FF906F -> 16748655 -> -23897
-0 -> FF9867 -> 16750695 -> 8483
-* -> FF6897 -> 16738455 -> -13661
-# -> FFB04F -> 16756815 -> -1173
-OK -> FF38C7 -> 16726215 -> 8675
-UP_ARROW -> FF18E7 -> 16718055 -> -14049
-LEFT_ARROW -> FF10EF -> 16716015 -> 19107
-RIGHT_ARROW -> FF5AA5 -> 16734885 -> -13113
-DOWN_ARROW -> FF4AB5 -> 16730805 -> -1373
+#Pre-Defined Traversing
+The prototype would have a local look-up table of all the possible routes to its desired destination to perform a pre-defined traversing design. This local look-up table would store directions from the cart dispatch area to the specific checkpoint. The cart will then maneuver to the desired product and wait for input from the user to continue to the next destination (achieving an automation level of 3). After completing all customer requests, the customer is ready to check out the cart maneuvers to the checkout.  
+
+This design has the advantage of being adaptable to specific product location changes since the grocery store can update the product location change or if the product is no longer available. The design has the disadvantage of being reliant on the calibration of the motor-distance algorithm to compute the exact desired location. If the motor/wheels over or underperforms, the cart may be stuck in an edge case that would require user input to correct.
