@@ -4,8 +4,8 @@ const byte ROWS = 1; //Rows
 const byte COLS = 4; //Columns
 //define the symbols on the buttons of the keypads
 char keys[ROWS][COLS] = {'1','2','3','4'};
-byte rowPins[ROWS] = {A1};
-byte colPins[COLS] = {A2,A3,A4,A5};
+byte rowPins[ROWS] = {A4};
+byte colPins[COLS] = {A0,A1,A2,A3};
 Adafruit_Keypad customKeypad = Adafruit_Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 void setup() {
