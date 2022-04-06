@@ -16,8 +16,8 @@ byte colPins[COLS] = {A0,A1,A2,A3};
 Adafruit_Keypad customKeypad = Adafruit_Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 //Timings
-long coToBakery_Time = 3400;                     //Checkout -> Bakery Time
-long coToProduce_Time = 4900;                    //Checkout -> Produce Time
+long coToBakery_Time = 3600;                     //Checkout -> Bakery Time
+long coToProduce_Time = 5000;                    //Checkout -> Produce Time
 long bakeryToMeats_Time = 4800;                  //Checkout -> Meats
 
 //Traveling Salesman Algorithm 
@@ -428,7 +428,7 @@ void turnRight(long currentAngle)                //Set motors to turn right for 
     mpu6050.update();
     Serial.print("\tTurning\tangleZ : ");
     Serial.println(mpu6050.getAngleZ());
-  } while(mpu6050.getAngleZ() > currentAngle - 145);
+  } while(mpu6050.getAngleZ() > currentAngle - 155);
   stopMove();
 
   rightBack.setSpeed(motorSpeed);                           //Set the motors to the motor speed
@@ -692,7 +692,7 @@ char meatsToBakery(char dir)                     //Meats -> Bakery
     Serial.println(mpu6050.getAngleZ());
     turnLeft(mpu6050.getAngleZ());
   }
-  traversal(4800);
+  traversal(5300);
   stopMove();
   lookRight();
   mpu6050.update();
@@ -822,7 +822,7 @@ char dairyToProduce(char dir)                    //Dairy -> Produce
     Serial.println(mpu6050.getAngleZ());
     turnRight(mpu6050.getAngleZ());
   }
-  traversal(1500);
+  traversal(1800);
   stopMove();
   lookRight();
   mpu6050.update();
@@ -830,7 +830,7 @@ char dairyToProduce(char dir)                    //Dairy -> Produce
   Serial.println(mpu6050.getAngleZ());
   turnRight(mpu6050.getAngleZ());
 
-  traversal(2300);
+  traversal(2800);
   stopMove();
   lookRight();
   mpu6050.update();
@@ -885,7 +885,7 @@ char produceToMeats(char dir)                    //Produce -> Meats
     turnLeft(mpu6050.getAngleZ());
   }
 
-  traversal(3200);
+  traversal(3800);
   stopMove();
   lookRight();
   mpu6050.update();
