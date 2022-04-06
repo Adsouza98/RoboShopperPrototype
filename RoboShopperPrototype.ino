@@ -211,6 +211,7 @@ void loop()
     else if ((routingTable[i] == produceLocation) && (location == meatsLocation)) {
       orientation = meatsToProduce(orientation);
     }
+    keypadContinue();
 
   }
 
@@ -241,6 +242,23 @@ void keypadInput(int userInput[])
       }
     }
   } while (count < 5);
+}
+
+void keypadContinue()
+{
+  int count = 0;
+  do {
+    customKeypad.tick();
+    while(customKeypad.available()){
+      keypadEvent e = customKeypad.read();
+
+      if (e.bit.EVENT == KEY_JUST_PRESSED) {
+        Serial.print((char)e.bit.KEY);
+        Serial.println(" pressed");
+        count++;
+      }
+    }
+  } while (count < 1);
 }
 
 //########################### TRAVELING SALESMAN ALGORITHM #########################################
